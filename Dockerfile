@@ -43,10 +43,7 @@ COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage \
-    && chmod -R 775 /var/www/html/bootstrap/cache
-
+RUN chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
 # Expose port
 EXPOSE 8080
 
