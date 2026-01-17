@@ -24,10 +24,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy application files
 COPY . /var/www/html
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+# Copy production env file as .env
+COPY .env.prod /var/www/html/.env
 
 # Install dependencies
 RUN composer install --optimize-autoloader --no-dev
@@ -41,12 +39,16 @@ COPY docker/nginx.conf /etc/nginx/sites-available/default
 # Copy supervisor configuration
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Copy and set deploy script permissions
-COPY docker/deploy.sh /var/www/html/deploy.sh
-RUN chmod +x /var/www/html/deploy.sh
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
 # Expose port
 EXPOSE 8080
 
-# Run deploy script and start supervisor
-CMD /var/www/html/deploy.sh && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+# Start script
+COPY docker/start.sh /var/www/html/start.sh
+RUN chmod +x /var/www/html/start.sh
+
+CMD ["/var/www/html/start.sh"]
