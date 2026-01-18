@@ -20,11 +20,17 @@ Route::prefix('auth')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('restaurants')->group(function () {
         Route::get('/', [App\Http\Controllers\RestaurantController::class, 'index']);
+        Route::get('/categories/list', [App\Http\Controllers\RestaurantController::class, 'getCategories']);
+        Route::get('/food/categories', [App\Http\Controllers\MenuController::class, 'getGlobalFoodCategories']);
+        
+        Route::middleware('role:restaurant_owner')->group(function () {
+            Route::get('/my/list', [App\Http\Controllers\RestaurantController::class, 'myRestaurants']);
+        });
+
         Route::get('/{id}', [App\Http\Controllers\RestaurantController::class, 'show']);
         
         Route::middleware('role:restaurant_owner')->group(function () {
             Route::post('/', [App\Http\Controllers\RestaurantController::class, 'store']);
-            Route::get('/my/list', [App\Http\Controllers\RestaurantController::class, 'myRestaurants']);
             Route::put('/{id}', [App\Http\Controllers\RestaurantController::class, 'update']);
             Route::delete('/{id}', [App\Http\Controllers\RestaurantController::class, 'destroy']);
             

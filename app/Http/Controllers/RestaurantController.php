@@ -118,12 +118,24 @@ class RestaurantController extends Controller
             'min_order_amount' => 'sometimes|numeric|min:0',
             'is_open' => 'sometimes|boolean',
             'is_accepting_orders' => 'sometimes|boolean',
+            'latitude' => 'sometimes|numeric',
+            'longitude' => 'sometimes|numeric',
+            'address_line1' => 'sometimes|string',
+            'city' => 'sometimes|string',
+            'state' => 'sometimes|string',
+            'postal_code' => 'sometimes|string',
+            'categories' => 'sometimes|array',
         ]);
 
         $restaurant->update($request->only([
             'name', 'email', 'phone', 'description', 'delivery_fee',
-            'min_order_amount', 'is_open', 'is_accepting_orders'
+            'min_order_amount', 'is_open', 'is_accepting_orders',
+            'latitude', 'longitude', 'address_line1', 'city', 'state', 'postal_code'
         ]));
+
+        if ($request->has('categories')) {
+            $restaurant->categories()->sync($request->categories);
+        }
 
         return response()->json([
             'message' => 'Restaurant updated successfully',
@@ -142,6 +154,11 @@ class RestaurantController extends Controller
         $restaurant->delete();
 
         return response()->json(['message' => 'Restaurant deleted successfully']);
+    }
+
+    public function getCategories()
+    {
+        return response()->json(\App\Models\RestaurantCategory::orderBy('sort_order')->get());
     }
 
     public function myRestaurants(Request $request)

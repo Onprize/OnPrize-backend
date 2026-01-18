@@ -204,4 +204,9 @@ class MenuController extends Controller
 
         return response()->json($addon, 201);
     }
+
+    public function getGlobalFoodCategories()
+    {
+        return response()->json(\App\Models\FoodCategory::orderBy('sort_order')->get());
+    }
 }
