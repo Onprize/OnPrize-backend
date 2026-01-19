@@ -92,7 +92,7 @@ class RestaurantController extends Controller
             'cuisine_types' => $request->cuisine_types,
             'delivery_fee' => $request->delivery_fee ?? 0,
             'min_order_amount' => $request->min_order_amount ?? 0,
-            'status' => 'approved',
+            'status' => 'pending',
         ]);
 
         return response()->json([
