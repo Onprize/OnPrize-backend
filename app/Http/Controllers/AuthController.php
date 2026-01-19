@@ -25,6 +25,10 @@ class AuthController extends Controller
             'phone' => 'nullable|string|unique:users,phone',
             'password' => 'required|string|min:8',
             'role' => 'required|in:customer,restaurant_owner,delivery_partner',
+            // KYC fields for restaurant owners
+            'aadhaar' => 'required_if:role,restaurant_owner|string|size:12',
+            'pan' => 'required_if:role,restaurant_owner|string|size:10',
+            'address' => 'required_if:role,restaurant_owner|string|min:10',
         ]);
 
         $user = User::create([
@@ -35,6 +39,16 @@ class AuthController extends Controller
             'role' => $request->role,
             'status' => 'active',
         ]);
+
+        // Create restaurant owner profile if applicable
+        if ($request->role === 'restaurant_owner' && ($request->aadhaar || $request->pan || $request->address)) {
+            $user->restaurantOwnerProfile()->create([
+                'aadhaar_number' => $request->aadhaar,
+                'pan_number' => strtoupper($request->pan),
+                'business_address' => $request->address,
+                'kyc_status' => 'pending',
+            ]);
+        }
 
         $otp = $this->otpService->generate($user->email, 'registration');
         $this->otpService->send($user->email, $otp);

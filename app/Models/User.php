@@ -61,6 +61,11 @@ class User extends Authenticatable
         return $this->hasOne(DeliveryPartner::class);
     }
 
+    public function restaurantOwnerProfile()
+    {
+        return $this->hasOne(RestaurantOwnerProfile::class);
+    }
+
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
