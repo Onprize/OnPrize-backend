@@ -23,10 +23,25 @@ class OtpService
 
     public function send($identifier, $otp)
     {
-        Mail::raw("Your OTP is: $otp\n\nValid for 10 minutes.", function ($message) use ($identifier) {
-            $message->to($identifier)
-                ->subject('Your OTP Code');
-        });
+        // Use Vercel email service
+        $vercelUrl = 'https://nemesis-letter-backend.vercel.app/api/mail/send-otp';
+        $apiKey = 'nemesis_internal_secret_2024';
+        
+        try {
+            $response = \Illuminate\Support\Facades\Http::post($vercelUrl, [
+                'email' => $identifier,
+                'code' => $otp,
+                'apiKey' => $apiKey,
+            ]);
+            
+            if ($response->failed()) {
+                \Log::error('OTP Email Failed: ' . $response->body());
+                throw new \Exception('Failed to send OTP email');
+            }
+        } catch (\Exception $e) {
+            \Log::error('OTP Service Error: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     public function verify($identifier, $otp, $type = 'login')
