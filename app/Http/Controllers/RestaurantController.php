@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Restaurant;
+use App\Helpers\LocationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -26,15 +27,11 @@ class RestaurantController extends Controller
         if ($request->has('lat') && $request->has('lng')) {
             $lat = $request->lat;
             $lng = $request->lng;
-            $radius = $request->radius ?? 10;
+            $radius = $request->radius ?? 30; // Default 30km radius
             
-            $query->selectRaw("*, 
-                ( 6371 * acos( cos( radians(?) ) * 
-                cos( radians( latitude ) ) * 
-                cos( radians( longitude ) - radians(?) ) + 
-                sin( radians(?) ) * 
-                sin( radians( latitude ) ) ) ) AS distance", 
-                [$lat, $lng, $lat])
+            $distanceSQL = LocationHelper::getDistanceSQL($lat, $lng);
+            
+            $query->selectRaw("*, $distanceSQL AS distance")
                 ->having('distance', '<', $radius)
                 ->orderBy('distance');
         }

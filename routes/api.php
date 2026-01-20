@@ -72,6 +72,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('delivery')->group(function () {
         Route::post('/register', [App\Http\Controllers\DeliveryPartnerController::class, 'register']);
         
+        // Route for finding nearby partners (used by restaurants for order assignment)
+        Route::post('/nearby', [App\Http\Controllers\DeliveryPartnerController::class, 'getNearbyPartners']);
+        
         Route::middleware('role:delivery_partner')->group(function () {
             Route::put('/profile', [App\Http\Controllers\DeliveryPartnerController::class, 'updateProfile']);
             Route::put('/location', [App\Http\Controllers\DeliveryPartnerController::class, 'updateLocation']);

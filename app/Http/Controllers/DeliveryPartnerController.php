@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\DeliveryService;
 use App\Models\DeliveryPartner;
 use App\Models\DeliveryRequest;
+use App\Helpers\LocationHelper;
 use Illuminate\Http\Request;
 
 class DeliveryPartnerController extends Controller
@@ -90,7 +91,7 @@ class DeliveryPartnerController extends Controller
 
     public function availableOrders(Request $request)
     {
-        $radius = $request->radius ?? 10;
+        $radius = $request->radius ?? 30; // Default 30km radius
         
         $orders = $this->deliveryService->getAvailableOrders(
             $request->user()->id,
@@ -192,6 +193,40 @@ class DeliveryPartnerController extends Controller
         return response()->json([
             'message' => 'Verification status updated',
             'partner' => $partner,
+        ]);
+    }
+
+    /**
+     * Get nearby delivery partners for order assignment
+     */
+    public function getNearbyPartners(Request $request)
+    {
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'radius' => 'sometimes|numeric|min:1|max:50',
+        ]);
+
+        $lat = $request->latitude;
+        $lng = $request->longitude;
+        $radius = $request->radius ?? 30; // Default 30km radius
+
+        $distanceSQL = LocationHelper::getDistanceSQL($lat, $lng, 'current_latitude', 'current_longitude');
+
+        $partners = DeliveryPartner::with('user')
+            ->where('is_available', true)
+            ->where('is_verified', true)
+            ->whereNotNull('current_latitude')
+            ->whereNotNull('current_longitude')
+            ->selectRaw("*, $distanceSQL AS distance")
+            ->having('distance', '<', $radius)
+            ->orderBy('distance')
+            ->get();
+
+        return response()->json([
+            'partners' => $partners,
+            'count' => $partners->count(),
+            'radius_km' => $radius,
         ]);
     }
 }
