@@ -94,6 +94,54 @@ class AdminController extends Controller
         return response()->json($restaurants);
     }
 
+    public function showUser($id)
+    {
+        $user = User::with(['addresses', 'orders' => function($query) {
+            $query->latest()->take(10);
+        }])->findOrFail($id);
+        
+        $stats = [
+            'total_orders' => $user->orders()->count(),
+            'total_spent' => $user->orders()->where('payment_status', 'success')->sum('total'),
+        ];
+        
+        return response()->json([
+            'user' => $user,
+            'stats' => $stats
+        ]);
+    }
+
+    public function showRestaurant($id)
+    {
+        $restaurant = Restaurant::with(['owner', 'orders' => function($query) {
+            $query->latest()->take(10);
+        }])->findOrFail($id);
+        
+        $stats = [
+            'total_orders' => $restaurant->orders()->count(),
+            'total_revenue' => $restaurant->orders()->where('payment_status', 'success')->sum('total'),
+        ];
+        
+        return response()->json([
+            'restaurant' => $restaurant,
+            'stats' => $stats
+        ]);
+    }
+
+    public function showOrder($id)
+    {
+        $order = Order::with([
+            'user', 
+            'restaurant', 
+            'deliveryPartner', 
+            'deliveryAddress',
+            'items.menuItem',
+            'statusHistory'
+        ])->findOrFail($id);
+        
+        return response()->json($order);
+    }
+
     public function deliveryPartners(Request $request)
     {
         $query = DeliveryPartner::with('user');

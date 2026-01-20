@@ -93,11 +93,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard']);
+        
         Route::get('/users', [App\Http\Controllers\AdminController::class, 'users']);
+        Route::get('/users/{id}', [App\Http\Controllers\AdminController::class, 'showUser']);
         Route::put('/users/{userId}/status', [App\Http\Controllers\AdminController::class, 'updateUserStatus']);
         
         // Restaurant management
         Route::get('/restaurants', [App\Http\Controllers\AdminController::class, 'restaurants']);
+        Route::get('/restaurants/{id}', [App\Http\Controllers\AdminController::class, 'showRestaurant']);
         Route::put('/restaurants/{id}/approve', [App\Http\Controllers\AdminController::class, 'approveRestaurant']);
         Route::put('/restaurants/{id}/reject', [App\Http\Controllers\AdminController::class, 'rejectRestaurant']);
         Route::put('/restaurants/{id}/toggle-status', [App\Http\Controllers\AdminController::class, 'toggleRestaurantStatus']);
@@ -109,7 +112,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/delivery-partners/{id}/reject', [App\Http\Controllers\AdminController::class, 'rejectDeliveryPartner']);
         Route::put('/delivery-partners/{id}/toggle-status', [App\Http\Controllers\AdminController::class, 'togglePartnerStatus']);
         
+        // Order management
         Route::get('/orders', [App\Http\Controllers\AdminController::class, 'orders']);
+        Route::get('/orders/{id}', [App\Http\Controllers\AdminController::class, 'showOrder']);
         Route::get('/analytics', [App\Http\Controllers\AdminController::class, 'analytics']);
         Route::get('/settings', [App\Http\Controllers\AdminController::class, 'settings']);
         Route::put('/settings', [App\Http\Controllers\AdminController::class, 'updateSettings']);
