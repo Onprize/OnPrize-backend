@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Delivery partner management
         Route::get('/delivery-partners', [App\Http\Controllers\AdminController::class, 'deliveryPartners']);
+        Route::get('/delivery-partners/{id}', [App\Http\Controllers\AdminController::class, 'showDeliveryPartner']);
         Route::put('/delivery-partners/{id}/verify', [App\Http\Controllers\AdminController::class, 'verifyDeliveryPartner']);
         Route::put('/delivery-partners/{id}/reject', [App\Http\Controllers\AdminController::class, 'rejectDeliveryPartner']);
         Route::put('/delivery-partners/{id}/toggle-status', [App\Http\Controllers\AdminController::class, 'togglePartnerStatus']);

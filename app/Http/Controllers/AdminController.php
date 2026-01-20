@@ -111,6 +111,12 @@ class AdminController extends Controller
         return response()->json($partners);
     }
 
+    public function showDeliveryPartner($id)
+    {
+        $partner = DeliveryPartner::with(['user'])->findOrFail($id);
+        return response()->json($partner);
+    }
+
     public function orders(Request $request)
     {
         $query = Order::with(['user', 'restaurant', 'deliveryPartner']);
