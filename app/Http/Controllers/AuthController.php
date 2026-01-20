@@ -26,9 +26,16 @@ class AuthController extends Controller
             'password' => 'required|string|min:8',
             'role' => 'required|in:customer,restaurant_owner,delivery_partner',
             // KYC fields for restaurant owners
-            'aadhaar' => 'required_if:role,restaurant_owner|string|size:12',
-            'pan' => 'required_if:role,restaurant_owner|string|size:10',
-            'address' => 'required_if:role,restaurant_owner|string|min:10',
+            'aadhaar' => 'required_if:role,restaurant_owner,delivery_partner|string|size:12',
+            'pan' => 'required_if:role,restaurant_owner,delivery_partner|string|size:10',
+            'address' => 'required_if:role,restaurant_owner,delivery_partner|string|min:10',
+            // fields for delivery partners
+            'vehicle_type' => 'required_if:role,delivery_partner|in:bike,scooter,bicycle,car',
+            'vehicle_number' => 'required_if:role,delivery_partner|string',
+            'license_number' => 'required_if:role,delivery_partner|string',
+            'bank_name' => 'required_if:role,delivery_partner|string',
+            'account_number' => 'required_if:role,delivery_partner|string',
+            'ifsc_code' => 'required_if:role,delivery_partner|string',
         ]);
 
         $user = User::create([
@@ -47,6 +54,24 @@ class AuthController extends Controller
                 'pan_number' => strtoupper($request->pan),
                 'business_address' => $request->address,
                 'kyc_status' => 'pending',
+            ]);
+        }
+
+        // Create delivery partner profile if applicable
+        if ($request->role === 'delivery_partner') {
+            $user->deliveryPartner()->create([
+                'aadhaar_number' => $request->aadhaar,
+                'pan_number' => strtoupper($request->pan),
+                'address' => $request->address,
+                'vehicle_type' => $request->vehicle_type,
+                'vehicle_number' => $request->vehicle_number,
+                'license_number' => $request->license_number,
+                'bank_name' => $request->bank_name,
+                'account_number' => $request->account_number,
+                'ifsc_code' => strtoupper($request->ifsc_code),
+                'verification_status' => 'pending',
+                'is_verified' => false,
+                'is_available' => false,
             ]);
         }
 

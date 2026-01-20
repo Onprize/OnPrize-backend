@@ -8,6 +8,12 @@ class DeliveryPartner extends Model
 {
     protected $fillable = [
         'user_id',
+        'aadhaar_number',
+        'pan_number',
+        'address',
+        'bank_name',
+        'account_number',
+        'ifsc_code',
         'vehicle_type',
         'vehicle_number',
         'license_number',
