@@ -36,8 +36,9 @@ class AuthController extends Controller
             'bank_name' => 'required_if:role,delivery_partner|string',
             'account_number' => 'required_if:role,delivery_partner|string',
             'ifsc_code' => 'required_if:role,delivery_partner|string',
-            'latitude' => 'required_if:role,delivery_partner|numeric|between:-90,90',
-            'longitude' => 'required_if:role,delivery_partner|numeric|between:-180,180',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'address' => 'nullable|string|min:3',
         ]);
 
         $user = User::create([
@@ -48,6 +49,21 @@ class AuthController extends Controller
             'role' => $request->role,
             'status' => 'active',
         ]);
+
+        // Create initial address for customer if location provided
+        if ($request->role === 'customer' && $request->latitude && $request->longitude) {
+            $user->addresses()->create([
+                'label' => 'Home',
+                'address_line1' => $request->address ?? 'Current Location',
+                'city' => 'Unknown', // Ideally parsed from reverse geocode on frontend/backend
+                'state' => 'Unknown',
+                'postal_code' => '000000',
+                'country' => 'India',
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'is_default' => true,
+            ]);
+        }
 
         // Create restaurant owner profile if applicable
         if ($request->role === 'restaurant_owner' && ($request->aadhaar || $request->pan || $request->address)) {
@@ -144,7 +160,7 @@ class AuthController extends Controller
             'message' => 'OTP verified successfully',
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user->load('deliveryPartner'),
+            'user' => $user->load(['deliveryPartner', 'addresses']),
         ]);
     }
 
@@ -179,13 +195,13 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user->load('deliveryPartner'),
+            'user' => $user->load(['deliveryPartner', 'addresses']),
         ]);
     }
 
     public function user(Request $request)
     {
-        return response()->json($request->user()->load('deliveryPartner'));
+        return response()->json($request->user()->load(['deliveryPartner', 'addresses']));
     }
 
     public function logout(Request $request)
