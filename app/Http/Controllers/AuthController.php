@@ -36,6 +36,8 @@ class AuthController extends Controller
             'bank_name' => 'required_if:role,delivery_partner|string',
             'account_number' => 'required_if:role,delivery_partner|string',
             'ifsc_code' => 'required_if:role,delivery_partner|string',
+            'latitude' => 'required_if:role,delivery_partner|numeric|between:-90,90',
+            'longitude' => 'required_if:role,delivery_partner|numeric|between:-180,180',
         ]);
 
         $user = User::create([
@@ -69,6 +71,9 @@ class AuthController extends Controller
                 'bank_name' => $request->bank_name,
                 'account_number' => $request->account_number,
                 'ifsc_code' => strtoupper($request->ifsc_code),
+                'current_latitude' => $request->latitude,
+                'current_longitude' => $request->longitude,
+                'last_location_update' => now(),
                 'verification_status' => 'pending',
                 'is_verified' => false,
                 'is_available' => false,
