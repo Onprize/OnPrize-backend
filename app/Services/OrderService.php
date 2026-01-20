@@ -12,6 +12,13 @@ use Illuminate\Support\Str;
 
 class OrderService
 {
+    protected $deliveryService;
+
+    public function __construct(\App\Services\DeliveryService $deliveryService)
+    {
+        $this->deliveryService = $deliveryService;
+    }
+
     public function createOrder($userId, $data)
     {
         return \DB::transaction(function () use ($userId, $data) {
@@ -124,6 +131,17 @@ class OrderService
         }
 
         $this->addStatusHistory($orderId, $status, $notes, $userId);
+
+        // Auto-assign delivery partner when ready for pickup
+        if ($status === 'ready_for_pickup') {
+            try {
+                $this->deliveryService->assignDeliveryPartner($orderId);
+            } catch (\Exception $e) {
+                \Log::warning("Failed to auto-assign delivery partner for order {$orderId}: " . $e->getMessage());
+                // We don't stop the status update, just log the failure
+                // Admin or Restaurant can retry later (feature to be added if needed)
+            }
+        }
 
         return $order;
     }

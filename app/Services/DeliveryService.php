@@ -6,22 +6,19 @@ use App\Models\DeliveryPartner;
 use App\Models\DeliveryRequest;
 use App\Models\Order;
 use App\Models\User;
+use App\Helpers\LocationHelper;
 
 class DeliveryService
 {
-    public function findNearbyPartners($latitude, $longitude, $radius = 5)
+    public function findNearbyPartners($latitude, $longitude, $radius = 30)
     {
+        $distanceSQL = LocationHelper::getDistanceSQL($latitude, $longitude, 'current_latitude', 'current_longitude');
+
         return DeliveryPartner::where('is_available', true)
             ->where('verification_status', 'verified')
             ->whereNotNull('current_latitude')
             ->whereNotNull('current_longitude')
-            ->selectRaw("*, 
-                ( 6371 * acos( cos( radians(?) ) * 
-                cos( radians( current_latitude ) ) * 
-                cos( radians( current_longitude ) - radians(?) ) + 
-                sin( radians(?) ) * 
-                sin( radians( current_latitude ) ) ) ) AS distance", 
-                [$latitude, $longitude, $latitude])
+            ->selectRaw("*, $distanceSQL AS distance")
             ->having('distance', '<', $radius)
             ->orderBy('distance')
             ->get();
@@ -34,7 +31,7 @@ class DeliveryService
         $nearbyPartners = $this->findNearbyPartners(
             $order->restaurant->latitude,
             $order->restaurant->longitude,
-            10
+            30
         );
 
         if ($nearbyPartners->isEmpty()) {
@@ -160,32 +157,15 @@ class DeliveryService
             ->whereNull('delivery_partner_id')
             ->get()
             ->filter(function ($order) use ($partner, $radius) {
-                $distance = $this->calculateDistance(
+                return LocationHelper::isWithinRadius(
                     $partner->current_latitude,
                     $partner->current_longitude,
                     $order->restaurant->latitude,
-                    $order->restaurant->longitude
+                    $order->restaurant->longitude,
+                    $radius
                 );
-                return $distance <= $radius;
             });
 
         return $orders;
-    }
-
-    protected function calculateDistance($lat1, $lon1, $lat2, $lon2)
-    {
-        $earthRadius = 6371;
-
-        $latDiff = deg2rad($lat2 - $lat1);
-        $lonDiff = deg2rad($lon2 - $lon1);
-
-        $a = sin($latDiff / 2) * sin($latDiff / 2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($lonDiff / 2) * sin($lonDiff / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        $distance = $earthRadius * $c;
-
-        return $distance;
     }
 }
