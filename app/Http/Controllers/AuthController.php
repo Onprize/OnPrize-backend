@@ -234,9 +234,10 @@ class AuthController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|unique:users,phone,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
+            'profile_image' => 'nullable|url',
         ]);
 
-        $updateData = $request->only(['name', 'email', 'phone']);
+        $updateData = $request->only(['name', 'email', 'phone', 'profile_image']);
 
         if ($request->filled('password')) {
             $updateData['password'] = Hash::make($request->password);

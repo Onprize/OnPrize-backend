@@ -97,6 +97,7 @@ class MenuController extends Controller
             'is_veg' => 'sometimes|boolean',
             'is_available' => 'sometimes|boolean',
             'preparation_time' => 'nullable|string',
+            'image' => 'nullable|url',
         ]);
 
         $item = MenuItem::create([
@@ -110,6 +111,7 @@ class MenuController extends Controller
             'is_veg' => $request->is_veg ?? true,
             'is_available' => $request->is_available ?? true,
             'preparation_time' => $request->preparation_time,
+            'image' => $request->image,
         ]);
 
         return response()->json($item, 201);
@@ -133,11 +135,12 @@ class MenuController extends Controller
             'discount_price' => 'nullable|numeric|min:0',
             'is_veg' => 'sometimes|boolean',
             'is_available' => 'sometimes|boolean',
+            'image' => 'nullable|url',
         ]);
 
         $item->update($request->only([
             'name', 'description', 'price', 'discount_price',
-            'is_veg', 'is_available'
+            'is_veg', 'is_available', 'image'
         ]));
 
         return response()->json($item);

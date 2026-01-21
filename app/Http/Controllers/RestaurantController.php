@@ -71,6 +71,8 @@ class RestaurantController extends Controller
             'cuisine_types' => 'nullable|array',
             'delivery_fee' => 'nullable|numeric|min:0',
             'min_order_amount' => 'nullable|numeric|min:0',
+            'logo' => 'nullable|url',
+            'banner_image' => 'nullable|url',
         ]);
 
         $restaurant = Restaurant::create([
@@ -89,6 +91,8 @@ class RestaurantController extends Controller
             'cuisine_types' => $request->cuisine_types,
             'delivery_fee' => $request->delivery_fee ?? 0,
             'min_order_amount' => $request->min_order_amount ?? 0,
+            'logo' => $request->logo,
+            'banner_image' => $request->banner_image,
             'status' => 'pending',
         ]);
 
@@ -122,12 +126,15 @@ class RestaurantController extends Controller
             'state' => 'sometimes|string',
             'postal_code' => 'sometimes|string',
             'categories' => 'sometimes|array',
+            'logo' => 'nullable|url',
+            'banner_image' => 'nullable|url',
         ]);
 
         $restaurant->update($request->only([
             'name', 'email', 'phone', 'description', 'delivery_fee',
             'min_order_amount', 'is_open', 'is_accepting_orders',
-            'latitude', 'longitude', 'address_line1', 'city', 'state', 'postal_code'
+            'latitude', 'longitude', 'address_line1', 'city', 'state', 'postal_code',
+            'logo', 'banner_image'
         ]));
 
         if ($request->has('categories')) {
