@@ -36,6 +36,19 @@ class AuthController extends Controller
             ], 429);
         }
 
+        // Rate limiting: prevent rapid OTP generation for same email
+        $lastOtp = \App\Models\Otp::where('identifier', $request->email)
+            ->where('type', 'registration')
+            ->where('created_at', '>', now()->subMinute())
+            ->first();
+
+        if ($lastOtp) {
+            return response()->json([
+                'message' => 'Please wait before requesting another OTP',
+                'retry_after' => 60 - now()->diffInSeconds($lastOtp->created_at),
+            ], 429);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email',
@@ -150,15 +163,22 @@ class AuthController extends Controller
         ]);
 
         // Rate limiting: prevent sending OTP more than once per minute
+        // Check BEFORE generate() deletes old OTPs
         $lastOtp = \App\Models\Otp::where('identifier', $request->identifier)
             ->where('type', $request->type)
             ->where('created_at', '>', now()->subMinute())
             ->first();
 
         if ($lastOtp) {
+            $retryAfter = 60 - now()->diffInSeconds($lastOtp->created_at);
+            \Log::warning('OTP rate limit exceeded', [
+                'identifier' => $request->identifier,
+                'type' => $request->type,
+                'retry_after' => $retryAfter,
+            ]);
             return response()->json([
                 'message' => 'Please wait before requesting another OTP',
-                'retry_after' => 60 - now()->diffInSeconds($lastOtp->created_at),
+                'retry_after' => $retryAfter,
             ], 429);
         }
 
@@ -169,7 +189,7 @@ class AuthController extends Controller
             'identifier' => $request->identifier,
             'type' => $request->type,
             'otp' => $otp,
-            'expires_at' => now()->addMinutes(10),
+            'expires_at' => now()->addMinutes(15),
         ]);
 
         return response()->json([
