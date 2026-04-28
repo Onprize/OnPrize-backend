@@ -25,20 +25,24 @@ class AuthController extends Controller
             'phone' => 'nullable|string|unique:users,phone',
             'password' => 'required|string|min:8',
             'role' => 'required|in:customer,restaurant_owner,delivery_partner',
-            // KYC fields for restaurant owners
+
+            // KYC fields
             'aadhaar' => 'required_if:role,restaurant_owner,delivery_partner|string|size:12',
             'pan' => 'required_if:role,restaurant_owner,delivery_partner|string|size:10',
+
+            // FIXED: only one address validation
             'address' => 'required_if:role,restaurant_owner,delivery_partner|string|min:10',
-            // fields for delivery partners
+
+            // delivery partner fields
             'vehicle_type' => 'required_if:role,delivery_partner|in:bike,scooter,bicycle,car',
             'vehicle_number' => 'required_if:role,delivery_partner|string',
             'license_number' => 'required_if:role,delivery_partner|string',
             'bank_name' => 'required_if:role,delivery_partner|string',
             'account_number' => 'required_if:role,delivery_partner|string',
             'ifsc_code' => 'required_if:role,delivery_partner|string',
+
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'address' => 'nullable|string|min:3',
         ]);
 
         $user = User::create([
@@ -50,12 +54,12 @@ class AuthController extends Controller
             'status' => 'active',
         ]);
 
-        // Create initial address for customer if location provided
+        // Customer address
         if ($request->role === 'customer' && $request->latitude && $request->longitude) {
             $user->addresses()->create([
                 'label' => 'Home',
                 'address_line1' => $request->address ?? 'Current Location',
-                'city' => 'Unknown', // Ideally parsed from reverse geocode on frontend/backend
+                'city' => 'Unknown',
                 'state' => 'Unknown',
                 'postal_code' => '000000',
                 'country' => 'India',
@@ -65,7 +69,7 @@ class AuthController extends Controller
             ]);
         }
 
-        // Create restaurant owner profile if applicable
+        // Restaurant owner profile
         if ($request->role === 'restaurant_owner' && ($request->aadhaar || $request->pan || $request->address)) {
             $user->restaurantOwnerProfile()->create([
                 'aadhaar_number' => $request->aadhaar,
@@ -75,7 +79,7 @@ class AuthController extends Controller
             ]);
         }
 
-        // Create delivery partner profile if applicable
+        // Delivery partner profile
         if ($request->role === 'delivery_partner') {
             $user->deliveryPartner()->create([
                 'aadhaar_number' => $request->aadhaar,
@@ -96,11 +100,14 @@ class AuthController extends Controller
             ]);
         }
 
-        $otp = $this->otpService->generate($user->email, 'registration');
-        $this->otpService->send($user->email, $otp);
+        // FIXED: send OTP to identifier (email or phone)
+        $identifier = $user->email ?? $user->phone;
+
+        $otp = $this->otpService->generate($identifier, 'registration');
+        $this->otpService->send($identifier, $otp);
 
         return response()->json([
-            'message' => 'Registration successful. OTP sent to your email.',
+            'message' => 'Registration successful. OTP sent.',
             'user_id' => $user->id,
         ], 201);
     }
@@ -201,7 +208,9 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        return response()->json($request->user()->load(['deliveryPartner', 'addresses']));
+        return response()->json(
+            $request->user()->load(['deliveryPartner', 'addresses'])
+        );
     }
 
     public function logout(Request $request)

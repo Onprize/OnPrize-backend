@@ -4,11 +4,17 @@ namespace App\Services;
 
 use App\Models\Otp;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\SendOtpMail;
 
 class OtpService
 {
     public function generate($identifier, $type = 'login')
     {
+        // Delete old OTPs (important)
+        Otp::where('identifier', $identifier)
+            ->where('type', $type)
+            ->delete();
+
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         
         Otp::create([
@@ -23,23 +29,10 @@ class OtpService
 
     public function send($identifier, $otp)
     {
-        // Use Vercel email service
-        $vercelUrl = 'https://nemesis-letter-backend.vercel.app/api/mail/send-otp';
-        $apiKey = 'nemesis_internal_secret_2024';
-        
         try {
-            $response = \Illuminate\Support\Facades\Http::post($vercelUrl, [
-                'email' => $identifier,
-                'code' => $otp,
-                'apiKey' => $apiKey,
-            ]);
-            
-            if ($response->failed()) {
-                \Log::error('OTP Email Failed: ' . $response->body());
-                throw new \Exception('Failed to send OTP email');
-            }
+            Mail::to($identifier)->send(new SendOtpMail($otp));
         } catch (\Exception $e) {
-            \Log::error('OTP Service Error: ' . $e->getMessage());
+            \Log::error('OTP Email Failed: ' . $e->getMessage());
             throw $e;
         }
     }
