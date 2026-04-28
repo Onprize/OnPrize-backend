@@ -27,15 +27,19 @@ class OtpService
         return $otp;
     }
 
-    public function send($identifier, $otp)
-    {
-        try {
+   public function send($identifier, $otp)
+{
+    try {
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             Mail::to($identifier)->send(new SendOtpMail($otp));
-        } catch (\Exception $e) {
-            \Log::error('OTP Email Failed: ' . $e->getMessage());
-            throw $e;
+        } else {
+            \Log::warning('OTP not sent. Invalid email: ' . $identifier);
         }
+    } catch (\Exception $e) {
+        \Log::error('OTP Email Failed: ' . $e->getMessage());
+        throw $e;
     }
+}
 
     public function verify($identifier, $otp, $type = 'login')
     {
