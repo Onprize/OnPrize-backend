@@ -19,10 +19,15 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        // Sanitize email: trim whitespace and convert to lowercase
+        $request->merge([
+            'email' => trim(strtolower($request->email)),
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|unique:users,phone',
+            'email' => 'required|email',
+            'phone' => 'nullable|string',
             'password' => 'required|string|min:8',
             'role' => 'required|in:customer,restaurant_owner,delivery_partner',
 
@@ -44,6 +49,12 @@ class AuthController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
         ]);
+
+        // Delete unverified user with same email if exists
+        $existingUser = User::where('email', $request->email)->whereNull('email_verified_at')->first();
+        if ($existingUser) {
+            $existingUser->delete();
+        }
 
         $user = User::create([
             'name' => $request->name,
@@ -114,6 +125,13 @@ class AuthController extends Controller
 
     public function sendOtp(Request $request)
     {
+        // Sanitize identifier if it's an email
+        if (filter_var($request->identifier, FILTER_VALIDATE_EMAIL)) {
+            $request->merge([
+                'identifier' => trim(strtolower($request->identifier)),
+            ]);
+        }
+
         $request->validate([
             'identifier' => 'required|string',
             'type' => 'required|in:registration,login,password_reset',
@@ -129,6 +147,13 @@ class AuthController extends Controller
 
     public function verifyOtp(Request $request)
     {
+        // Sanitize identifier if it's an email
+        if (filter_var($request->identifier, FILTER_VALIDATE_EMAIL)) {
+            $request->merge([
+                'identifier' => trim(strtolower($request->identifier)),
+            ]);
+        }
+
         $request->validate([
             'identifier' => 'required|string',
             'otp' => 'required|string|size:6',
