@@ -24,6 +24,18 @@ class AuthController extends Controller
             'email' => trim(strtolower($request->email)),
         ]);
 
+        // Rate limiting: prevent rapid registration attempts
+        $lastRegistration = \App\Models\User::where('email', $request->email)
+            ->where('created_at', '>', now()->subMinute())
+            ->first();
+
+        if ($lastRegistration) {
+            return response()->json([
+                'message' => 'Please wait before registering again',
+                'retry_after' => 60 - now()->diffInSeconds($lastRegistration->created_at),
+            ], 429);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email',
@@ -137,8 +149,28 @@ class AuthController extends Controller
             'type' => 'required|in:registration,login,password_reset',
         ]);
 
+        // Rate limiting: prevent sending OTP more than once per minute
+        $lastOtp = \App\Models\Otp::where('identifier', $request->identifier)
+            ->where('type', $request->type)
+            ->where('created_at', '>', now()->subMinute())
+            ->first();
+
+        if ($lastOtp) {
+            return response()->json([
+                'message' => 'Please wait before requesting another OTP',
+                'retry_after' => 60 - now()->diffInSeconds($lastOtp->created_at),
+            ], 429);
+        }
+
         $otp = $this->otpService->generate($request->identifier, $request->type);
         $this->otpService->send($request->identifier, $otp);
+
+        \Log::info('OTP sent', [
+            'identifier' => $request->identifier,
+            'type' => $request->type,
+            'otp' => $otp,
+            'expires_at' => now()->addMinutes(10),
+        ]);
 
         return response()->json([
             'message' => 'OTP sent successfully',
@@ -160,6 +192,12 @@ class AuthController extends Controller
             'type' => 'required|in:registration,login,password_reset',
         ]);
 
+        \Log::info('OTP verification attempt', [
+            'identifier' => $request->identifier,
+            'otp' => $request->otp,
+            'type' => $request->type,
+        ]);
+
         $verified = $this->otpService->verify(
             $request->identifier,
             $request->otp,
@@ -167,6 +205,11 @@ class AuthController extends Controller
         );
 
         if (!$verified) {
+            \Log::error('OTP verification failed', [
+                'identifier' => $request->identifier,
+                'otp' => $request->otp,
+                'type' => $request->type,
+            ]);
             throw ValidationException::withMessages([
                 'otp' => ['Invalid or expired OTP'],
             ]);
