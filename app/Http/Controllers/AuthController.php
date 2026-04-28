@@ -24,31 +24,6 @@ class AuthController extends Controller
             'email' => trim(strtolower($request->email)),
         ]);
 
-        // Rate limiting: prevent rapid registration attempts
-        $lastRegistration = \App\Models\User::where('email', $request->email)
-            ->where('created_at', '>', now()->subMinute())
-            ->first();
-
-        if ($lastRegistration) {
-            return response()->json([
-                'message' => 'Please wait before registering again',
-                'retry_after' => 60 - now()->diffInSeconds($lastRegistration->created_at),
-            ], 429);
-        }
-
-        // Rate limiting: prevent rapid OTP generation for same email
-        $lastOtp = \App\Models\Otp::where('identifier', $request->email)
-            ->where('type', 'registration')
-            ->where('created_at', '>', now()->subMinute())
-            ->first();
-
-        if ($lastOtp) {
-            return response()->json([
-                'message' => 'Please wait before requesting another OTP',
-                'retry_after' => 60 - now()->diffInSeconds($lastOtp->created_at),
-            ], 429);
-        }
-
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email',
@@ -136,14 +111,9 @@ class AuthController extends Controller
             ]);
         }
 
-        // FIXED: send OTP to identifier (email or phone)
-        $identifier = $user->email ?? $user->phone;
-
-        $otp = $this->otpService->generate($identifier, 'registration');
-        $this->otpService->send($identifier, $otp);
-
+        // OTP is sent separately via sendOtp endpoint, not here
         return response()->json([
-            'message' => 'Registration successful. OTP sent.',
+            'message' => 'Registration successful. Please verify OTP.',
             'user_id' => $user->id,
         ], 201);
     }
