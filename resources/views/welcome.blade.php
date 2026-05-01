@@ -19,7 +19,7 @@
             </style>
         @endif
     </head>
-    <style> body { margin: 0; padding: 0; font-family: Arial, sans-serif; /* Background gradient */ background: linear-gradient(135deg, #4facfe, #00f2fe); height: 100vh; display: flex; align-items: center; justify-content: center; } .container { background: #ffffff; padding: 40px 60px; border-radius: 12px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); } h1 { margin: 0; font-size: 36px; color: #333; } p { margin-top: 10px; color: #666; font-size: 16px; } .btn { margin-top: 20px; padding: 10px 20px; border: none; background: #ffffff; color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; } .btn:hover { background: #ffffff; } </style>
+    <style> body { margin: 0; padding: 0; font-family: Arial, sans-serif; /* Background gradient */ background: linear-gradient(135deg, #ffffff, #00f2fe); height: 100vh; display: flex; align-items: center; justify-content: center; } .container { background: #ffffff; padding: 40px 60px; border-radius: 12px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); } h1 { margin: 0; font-size: 36px; color: #333; } p { margin-top: 10px; color: #666; font-size: 16px; } .btn { margin-top: 20px; padding: 10px 20px; border: none; background: #4facfe; color: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; } .btn:hover { background: #3a8ee6; } </style>
     <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
         <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
             @if (Route::has('login'))
